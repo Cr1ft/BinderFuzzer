@@ -1,0 +1,1 @@
+echo "aaaa" | ./radamsa -n 1
