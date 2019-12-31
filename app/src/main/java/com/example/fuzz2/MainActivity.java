@@ -2,155 +2,80 @@ package com.example.fuzz2;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.fuzz2.util.BinderInfo;
-import com.example.fuzz2.util.FuzzThread;
+import com.example.fuzz2.Service.FuzzService;
 import com.example.fuzz2.util.FuzzUtil;
-import com.example.fuzz2.util.LogUtils;
-import com.example.fuzz2.util.Radamsa;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-public class MainActivity extends AppCompatActivity {
-    private Button button_start;
-    private Button buttonTest;
-    private static final String TAG = "SECNEO";
-    private BinderInfo binderInfo;
-    private String[] services;
-    private String[] allInterfaceName;
-    private LogUtils logu;
-    private EditText ed;
-    private TextView tv;
-    // Used to load the 'native-lib' library on application startup.
-//    static {
-//        System.loadLibrary("native-lib");
-//    }
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+  private Button button_start;
+  private Button button_stop;
+  private Button button_dest;
+  private EditText ed_serviceName;
+  private EditText ed_interfacename;
+  private EditText ed_code;
+  private Intent intent;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        final FuzzUtil fuzzu = FuzzUtil.getInstance(MainActivity.this);
-        fuzzu.copyFile2EXe("radamsa","radamsa");
-        fuzzu.copyFile2EXe("start.sh","start.sh");
-
-        button_start = (Button) findViewById(R.id.button);
-        buttonTest = (Button) findViewById(R.id.button2);
-        //test
-        ed = findViewById(R.id.editText);
-        tv = findViewById(R.id.textView);
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    //每次启动释放脚本文件
+    final FuzzUtil fuzzu = FuzzUtil.getInstance(MainActivity.this);
+    fuzzu.copyFile2EXe("radamsa", "radamsa");
+    fuzzu.copyFile2EXe("start.sh", "start.sh");
+    //初始化变量
+    initVar();
+    //设置点击监听
+    button_dest.setOnClickListener(this);
+    button_stop.setOnClickListener(this);
+    button_start.setOnClickListener(this);
 
 
-
-        button_start.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                binderInfo = new BinderInfo(MainActivity.this);
-                logu = binderInfo.getLogu();
-                services = binderInfo.getServices();
-                Log.d(TAG, "FUZZ START ..........................");
-                logu.log("FUZZ START ...............................");
-
-                int thNum = 10;
-                int ServiceNum = services.length;
-                int mod = ServiceNum % thNum;
-                int n  = (int) ServiceNum / thNum;
-                int start = 0;
-                int end =0;
-                Thread T = null;
-                String[] tmp;
-                FuzzThread[] a = new FuzzThread[thNum];
-                FuzzThread th =null;
-                for(int i = 1 ; i <= thNum ; i++){
-                    if(mod == 0 ){
-                        tmp = fuzzu.splitStringArray(services,start,start+n);
-                        th=new FuzzThread(MainActivity.this,tmp,i);
-                        a[i-1]=th;
-                        start = start+n;
-                    }else{
-
-                        if(i==thNum){
-                            tmp = fuzzu.splitStringArray(services,start,start+mod);
-                            th=new FuzzThread(MainActivity.this,tmp,i);
-                            a[i-1]=th;
-                            start = start+n;
-                            break;
-                        }
-                        tmp = fuzzu.splitStringArray(services,start,start+n);
-                        th=new FuzzThread(MainActivity.this,tmp,i);
-                        a[i-1]=th;
-                        start = start+n;
-                    }
+  }
 
 
-                }
+  private void initVar() {
+    intent = new Intent(this, FuzzService.class);
+    button_start = findViewById(R.id.button);
+    button_stop = findViewById(R.id.button_stop);
+    button_dest= findViewById(R.id.button2);
+    ed_serviceName = findViewById(R.id.editText_service_name);
+    ed_code = findViewById(R.id.editText3_code);
+    ed_interfacename = findViewById(R.id.editText2_interfacename);
 
-                for(FuzzThread t : a){
-                    T = new Thread(t);
-                    T.start();
-                }
+  }
 
-            }
-        });
-
-
-        buttonTest.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    String cmd = ed.getText().toString();
-                    BufferedReader o = null;
-                    BufferedReader e = null;
-                    StringBuilder s = new StringBuilder();
-                    Process p = null;
-                    if(cmd.isEmpty()){
-                        File ff = new File("/data/local/tmp/","radamsa");
-                         p = (Process) Runtime.getRuntime().exec(new String[]{"sh","-c","./start.sh"},null,getFilesDir());
-                    }else{
-
-                        p = (Process) Runtime.getRuntime().exec(cmd,null,getFilesDir());
-                    }
-
-                    o = new BufferedReader(new InputStreamReader(p.getInputStream(),"UTF-8"));
-                    e = new BufferedReader(new InputStreamReader(p.getErrorStream(),"UTF-8"));
-
-                    String line =null;
-
-                    while((line = o.readLine())!=null){
-                        s.append(line);
-                    }
-                    while((line = e.readLine())!=null){
-                        s.append(line);
-                    }
-                    o.close();
-                    e.close();
-                    Toast.makeText(MainActivity.this,s,Toast.LENGTH_LONG).show();
-
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        });
-
-
-
+  @Override
+  public void onClick(View v) {
+    switch (v.getId()) {
+      case R.id.button:
+        startService(intent);
+        break;
+      case R.id.button2:
+        break;
+      case R.id.button_stop:
+        stopService(intent);
+        break;
+      default:
+        break;
     }
+  }
 
-    /**
-     * A native method that is implemented by the 'native-lib' native library,
-     * which is packaged with this application.
-     */
+  /**
+   * A native method that is implemented by the 'native-lib' native library,
+   * which is packaged with this application.
+   */
 //    public native String stringFromJNI();
 }

@@ -13,63 +13,64 @@ import java.io.UnsupportedEncodingException;
 
 public class Radamsa {
 
-    public Radamsa(){}
+  public Radamsa() {
+  }
 
-    public static byte[] exec(Context context, String[] cmd){
-        Process pro = null;
-        byte [] buff = new byte[1024];
+  public static byte[] exec(Context context, String[] cmd) {
+    Process pro = null;
+    byte[] buff = new byte[1024];
 
-        BufferedReader error = null;
-        StringBuilder str = new StringBuilder();
+    BufferedReader error = null;
+    StringBuilder str = new StringBuilder();
 
-        byte [] re = null;
-        ByteArrayOutputStream b = null;
+    byte[] re = null;
+    ByteArrayOutputStream b = null;
 
-        try {
-            pro = (Process) Runtime.getRuntime().exec(cmd,null,context.getFilesDir());
+    try {
+      pro = (Process) Runtime.getRuntime().exec(cmd, null, context.getFilesDir());
 
-            error = new BufferedReader(new InputStreamReader(pro.getErrorStream(),"UTF-8"));
-            String line = null;
-            pro.waitFor();
-            b = new ByteArrayOutputStream(1024);
-            int len = pro.getInputStream().read(buff);
+      error = new BufferedReader(new InputStreamReader(pro.getErrorStream(), "UTF-8"));
+      String line = null;
+      pro.waitFor();
+      b = new ByteArrayOutputStream(1024);
+      int len = pro.getInputStream().read(buff);
 
-            while(len > 0){
-                b.write(buff,0,len);
-                b.flush();
-                len = pro.getInputStream().read(buff);
-            }
+      while (len > 0) {
+        b.write(buff, 0, len);
+        b.flush();
+        len = pro.getInputStream().read(buff);
+      }
 
-            while((line=error.readLine())!=null){
-                str.append(line);
-            }
+      while ((line = error.readLine()) != null) {
+        str.append(line);
+      }
 
-            re = b.toByteArray();
+      re = b.toByteArray();
 
 
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }finally {
-            closeStream(b);
-            if (pro != null) {
-                pro.destroy();
-            }
-        }
-        return re;
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    } finally {
+      closeStream(b);
+      if (pro != null) {
+        pro.destroy();
+      }
     }
+    return re;
+  }
 
-    private static void closeStream(Closeable stream) {
-        if (stream != null) {
-            try {
-                stream.close();
-            } catch (Exception e) {
-                // nothing
-            }
-        }
+  private static void closeStream(Closeable stream) {
+    if (stream != null) {
+      try {
+        stream.close();
+      } catch (Exception e) {
+        // nothing
+      }
     }
+  }
 
 }
